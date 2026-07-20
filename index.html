@@ -1,12 +1,389 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>我的第一个博客</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>来杯超级中可的blog</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #1a1a2e;
+            line-height: 1.8;
+            padding-top: 80px;
+            padding-bottom: 40px;
+            padding-left: 40px;
+            padding-right: 40px;
+            min-height: 100vh;
+
+            /* ===== 背景图 ===== */
+            background-image: url('bg.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        /* ===== 顶部固定导航栏（半透明） ===== */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            padding: 16px 180px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .navbar .site-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a2e;
+            text-decoration: none;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+        }
+
+        .navbar .site-title:hover {
+            color: #4a6cf7;
+        }
+
+        .navbar .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar .nav-links li a {
+            text-decoration: none;
+            color: #1a1a2e;
+            font-weight: 500;
+            font-size: 16px;
+            cursor: pointer;
+            transition: color 0.2s;
+            padding: 4px 0;
+        }
+
+        .navbar .nav-links li a:hover {
+            color: #4a6cf7;
+        }
+
+        /* ===== 双栏布局 ===== */
+        .main-wrapper {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+        }
+
+        /* ===== 左侧个人信息卡片（半透明） ===== */
+        .sidebar {
+            flex: 0 0 260px;
+            position: sticky;
+            top: 110px;
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 32px 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .sidebar .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #eef2ff;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+            color: #4a6cf7;
+            font-weight: 700;
+        }
+
+        .sidebar .name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+
+        .sidebar .bio {
+            font-size: 14px;
+            color: #555;
+            margin: 6px 0 18px 0;
+        }
+
+        .sidebar .stats {
+            display: flex;
+            justify-content: space-around;
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+            padding-top: 18px;
+            margin-top: 6px;
+        }
+
+        .sidebar .stats .stat-item {
+            text-align: center;
+        }
+
+        .sidebar .stats .stat-number {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+
+        .sidebar .stats .stat-label {
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* ===== 右侧内容区（半透明） ===== */
+        .content {
+            flex: 0 0 70%;
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 40px 44px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            min-height: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* 页面切换：默认显示首页 */
+        #page-home { display: block; }
+        #page-about { display: none; }
+        #page-links { display: none; }
+
+        /* 文章样式 */
+        .post-title {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 10px;
+            color: #1a1a2e;
+        }
+
+        .post-meta {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .post-meta .tag {
+            background: rgba(74, 108, 247, 0.12);
+            color: #4a6cf7;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .post-body p {
+            margin-bottom: 20px;
+            font-size: 17px;
+            color: #2d2d44;
+        }
+
+        .post-body h2 {
+            font-size: 24px;
+            margin: 35px 0 15px 0;
+            color: #1a1a2e;
+        }
+
+        .post-body ul {
+            padding-left: 25px;
+            margin-bottom: 20px;
+        }
+        .post-body li {
+            margin-bottom: 8px;
+        }
+
+        .post-body blockquote {
+            border-left: 4px solid #4a6cf7;
+            background: rgba(255, 255, 255, 0.4);
+            padding: 15px 22px;
+            margin: 25px 0;
+            border-radius: 0 12px 12px 0;
+            color: #3d3d5c;
+            font-style: italic;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+            text-align: center;
+            font-size: 14px;
+            color: #888;
+        }
+
+        .footer a {
+            color: #4a6cf7;
+            text-decoration: none;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 900px) {
+            .main-wrapper {
+                flex-direction: column;
+            }
+            .sidebar {
+                flex: none;
+                width: 100%;
+                position: relative;
+                top: 0;
+            }
+            .navbar {
+                padding: 12px 20px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .navbar .nav-links {
+                gap: 16px;
+                flex-wrap: wrap;
+            }
+            body {
+                padding: 70px 16px 30px 16px;
+            }
+            .content {
+                flex: none;
+                width: 100%;
+                padding: 28px 18px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Hello World！</h1>
-    <p>这是我的第一个个人博客网站，通过 GitHub Pages 搭建。</p>
-    <p>今天日期：2026年7月20日</p>
+
+<!-- ===== 顶部固定导航栏 ===== -->
+<nav class="navbar">
+    <a class="site-title" href="https://Super-Coke.github.io/myblog/" target="_blank">来杯超级中可的blog</a>
+    <ul class="nav-links">
+        <li><a onclick="showPage('home')">首页</a></li>
+        <li><a onclick="showPage('about')">关于我</a></li>
+        <li><a onclick="showPage('links')">友链</a></li>
+    </ul>
+</nav>
+
+<!-- ===== 双栏主体 ===== -->
+<div class="main-wrapper">
+
+    <!-- ===== 左侧个人信息卡片 ===== -->
+    <aside class="sidebar">
+        <img class="avatar" src="avatar.jpg" alt="头像" style="width:100px; height:100px; border-radius:50%; object-fit:cover;" />
+        <div class="name">Super-Coke</div>
+        <div class="bio">浙江 · 杭州</div>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-number">0</div>
+                <div class="stat-label">文章</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">0</div>
+                <div class="stat-label">访问</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ===== 右侧内容区 ===== -->
+    <main class="content">
+
+        <!-- 首页 -->
+        <div id="page-home">
+            <h1 class="post-title">Hello World · 我的博客开张了</h1>
+            <div class="post-meta">
+                <span>📅 2026年7月20日</span>
+                <span class="tag"># 生活</span>
+                <span class="tag"># 开始</span>
+            </div>
+            <div class="post-body">
+                <p>欢迎来到我的个人博客。这里是我记录思考、生活和学习的地方。今天，我正式把这个小站点亮了。</p>
+                <h2>为什么建这个博客？</h2>
+                <p>我一直觉得，写东西是整理自己最好的一种方式。把自己学到的、想到的写下来，既能巩固记忆，也能和别人分享。这个博客就是一个安静的小角落，没有推送，没有算法，只有文字。</p>
+                <blockquote>“写作是思考的延伸，也是最好的自我对话方式。”</blockquote>
+                <p>接下来，我可能会写一些技术笔记、读书感想、或者生活里的小事。如果你偶然路过，欢迎你停下看看。</p>
+                <h2>近期计划</h2>
+                <ul>
+                    <li>🔧 给博客换一套好看的模板</li>
+                    <li>📖 写一篇关于 Git 入门的文章</li>
+                    <li>☕ 收集一些有意思的博客友链</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 关于我 -->
+        <div id="page-about">
+            <h1 class="post-title">关于我</h1>
+            <div class="post-body">
+                <p>你好！我是一名计算机爱好者，正在学习编程和建站。</p>
+                <p>这个博客是我用 GitHub Pages 搭建的个人小站，用来记录学习笔记、生活感悟和一些有趣的想法。</p>
+                <p>目前正在努力把博客变得更完善，欢迎多多交流～</p>
+                <ul>
+                    <li>邮箱：1062365212@qq.com</li>
+                    <li>GitHub：<a href="https://github.com/Super-Coke" target="_blank">Super-Coke</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 友链 -->
+        <div id="page-links">
+            <h1 class="post-title">友情链接</h1>
+            <div class="post-body">
+                <p>这里是我的一些朋友和喜欢的站点，欢迎去看看：</p>
+                <ul>
+                    <li><a href="#" target="_blank">朋友A的博客</a> —— 一句话介绍</li>
+                    <li><a href="#" target="_blank">朋友B的博客</a> —— 一句话介绍</li>
+                    <li><a href="#" target="_blank">技术社区</a> —— 一句话介绍</li>
+                </ul>
+                <p style="margin-top:30px;">如果你也想交换友链，欢迎通过邮箱联系我～</p>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="footer">
+            © 2026 · 使用 GitHub Pages 搭建 ·
+            <a href="https://github.com/Super-Coke" target="_blank">Super-Coke 的主页</a>
+        </div>
+
+    </main>
+</div>
+
+<!-- 页面切换脚本 -->
+<script>
+    function showPage(page) {
+        document.getElementById('page-home').style.display = 'none';
+        document.getElementById('page-about').style.display = 'none';
+        document.getElementById('page-links').style.display = 'none';
+
+        if (page === 'home') {
+            document.getElementById('page-home').style.display = 'block';
+        } else if (page === 'about') {
+            document.getElementById('page-about').style.display = 'block';
+        } else if (page === 'links') {
+            document.getElementById('page-links').style.display = 'block';
+        }
+    }
+</script>
+
 </body>
 </html>

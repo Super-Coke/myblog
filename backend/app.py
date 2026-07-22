@@ -3,7 +3,8 @@ from flask_cors import CORS
 import sqlite3
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='/static')
-CORS(app)
+# 允许所有来源跨域（或者指定 GitHub Pages 域名）
+CORS(app, resources={r"/api/*": {"origins": ["https://super-coke.github.io", "*"]}})
 
 def get_db_connection():
     conn = sqlite3.connect('blog.db')

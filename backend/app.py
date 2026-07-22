@@ -1,43 +1,21 @@
-from flask import Flask, jsonify, send_from_directory, request
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import os
-import sqlite3
 import psycopg2
-from psycopg2.extras import RealDictCursor
 
-app = Flask(__name__, static_folder='../frontend', static_url_path='/static')
+app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": ["https://super-coke.github.io", "*"]}})
 
 # ===== 数据库连接 =====
 def get_db_connection():
     DATABASE_URL = os.environ.get('DATABASE_URL')
-    if DATABASE_URL:
-        # 使用 PostgreSQL
-        conn = psycopg2.connect(DATABASE_URL)
-        return conn
-    else:
-        # 本地开发时使用 SQLite
-        conn = sqlite3.connect('blog.db')
-        conn.row_factory = sqlite3.Row
-        return conn
+    return psycopg2.connect(DATABASE_URL)
 
-# ===== 首页路由 =====
+# ===== 首页路由：返回前端 index.html =====
 @app.route('/')
 def index():
-    try:
-        with open('frontend/index.html', 'r', encoding='utf-8') as f:
-            return f.read()
-    except FileNotFoundError:
-        with open('../frontend/index.html', 'r', encoding='utf-8') as f:
-            return f.read()
-
-# ===== 静态文件路由 =====
-@app.route('/static/<path:filename>')
-def static_files(filename):
-    try:
-        return send_from_directory('frontend', filename)
-    except FileNotFoundError:
-        return send_from_directory('../frontend', filename)
+    with open('index.html', 'r', encoding='utf-8') as f:
+        return f.read()
 
 # ===== API 1：获取所有文章列表 =====
 @app.route('/api/posts', methods=['GET'])
@@ -45,11 +23,11 @@ def get_posts():
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('SELECT * FROM posts ORDER BY id DESC')
-    posts_db = cur.fetchall()
+    rows = cur.fetchall()
     conn.close()
 
     posts = []
-    for row in posts_db:
+    for row in rows:
         posts.append({
             'id': row[0],
             'title': row[1],
@@ -71,7 +49,6 @@ def get_post_detail(post_id):
     if row is None:
         return '<h1>404 - 文章未找到</h1><p><a href="/">返回首页</a></p>', 404
 
-    # 转换为字典
     post = {
         'id': row[0],
         'title': row[1],
@@ -103,7 +80,7 @@ def get_post_detail(post_id):
                 margin: 60px auto;
                 padding: 0 20px;
                 line-height: 1.8;
-                background-image: url('/static/detail-bg.png');
+                background-image: url('./detail-bg.png');
                 background-size: cover;
                 background-position: center;
                 background-attachment: fixed;
@@ -429,7 +406,7 @@ def delete_post(post_id):
     if post is None:
         conn.close()
         return jsonify({'success': False, 'message': '文章不存在'}), 404
-     
+    
     cur.execute('DELETE FROM posts WHERE id = %s', (post_id,))
     conn.commit()
     conn.close()

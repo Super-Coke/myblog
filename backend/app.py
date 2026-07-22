@@ -3,7 +3,6 @@ from flask_cors import CORS
 import sqlite3
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='/static')
-# 允许所有来源跨域（或者指定 GitHub Pages 域名）
 CORS(app, resources={r"/api/*": {"origins": ["https://super-coke.github.io", "*"]}})
 
 def get_db_connection():
@@ -35,7 +34,7 @@ def get_posts():
             'id': row['id'],
             'title': row['title'],
             'date': row['date'],
-            'tags': row['tags'].split(','),
+            'tags': row['tags'].split(',') if row['tags'] else [],
             'summary': row['summary']
         })
     return jsonify(posts)
@@ -50,7 +49,15 @@ def get_post_detail(post_id):
     if post is None:
         return '<h1>404 - 文章未找到</h1><p><a href="/">返回首页</a></p>', 404
 
-    content_html = post['content'].replace('\n', '<br>') if post['content'] else '（暂无正文内容）'
+    # 安全处理 content
+    if post['content'] is not None:
+        content_html = post['content'].replace('\n', '<br>')
+    else:
+        content_html = '（暂无正文内容）'
+
+    # 安全处理 tags
+    tags_list = post['tags'].split(',') if post['tags'] else []
+    tags_html = ''.join([f'<span class="tag"># {tag.strip()}</span>' for tag in tags_list if tag.strip()])
 
     html = f'''
     <!DOCTYPE html>
@@ -61,87 +68,18 @@ def get_post_detail(post_id):
         <title>{post['title']} · 我的博客</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
         <style>
-            * {{
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }}
-
-            html, body {{
-                height: 100%;
-                margin: 0;
-            }}
-
             body {{
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                 max-width: 800px;
-                margin: 0 auto;
-                padding: 80px 20px 0 20px;
+                margin: 60px auto;
+                padding: 0 20px;
                 line-height: 1.8;
                 background-image: url('/static/detail-bg.png');
                 background-size: cover;
                 background-position: center;
                 background-attachment: fixed;
                 color: #1a1a2e;
-                display: flex;
-                flex-direction: column;
-                min-height: 100vh;
             }}
-
-            /* ===== 导航栏 ===== */
-            .navbar {{
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                background: rgba(255, 255, 255, 0.25);
-                backdrop-filter: blur(6px);
-                -webkit-backdrop-filter: blur(6px);
-                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-                padding: 16px 180px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                z-index: 1000;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            }}
-
-            .navbar .site-title {{
-                font-size: 20px;
-                font-weight: 700;
-                color: #1a1a2e;
-                text-decoration: none;
-                cursor: pointer;
-                letter-spacing: 0.5px;
-            }}
-
-            .navbar .site-title:hover {{
-                color: #4a6cf7;
-            }}
-
-            .navbar .nav-links {{
-                display: flex;
-                gap: 32px;
-                list-style: none;
-                margin: 0;
-                padding: 0;
-            }}
-
-            .navbar .nav-links li a {{
-                text-decoration: none;
-                color: #1a1a2e;
-                font-weight: 500;
-                font-size: 16px;
-                cursor: pointer;
-                transition: color 0.2s;
-                padding: 4px 0;
-            }}
-
-            .navbar .nav-links li a:hover {{
-                color: #4a6cf7;
-            }}
-
-            /* ===== 文章卡片 ===== */
             .post-card {{
                 background: rgba(255,255,255,0.25);
                 backdrop-filter: blur(6px);
@@ -151,9 +89,7 @@ def get_post_detail(post_id):
                 box-shadow: 0 10px 40px rgba(0,0,0,0.08);
                 border: 1px solid rgba(255,255,255,0.2);
                 position: relative;
-                flex: 1;
             }}
-
             .back-icon {{
                 position: absolute;
                 top: 20px;
@@ -168,7 +104,6 @@ def get_post_detail(post_id):
                 transform: scale(1.1);
                 color: #4a6cf7;
             }}
-
             h1 {{
                 font-size: 32px;
                 line-height: 1.3;
@@ -176,7 +111,6 @@ def get_post_detail(post_id):
                 margin-top: 10px;
                 padding-left: 30px;
             }}
-
             .meta {{
                 color: #666;
                 font-size: 14px;
@@ -187,7 +121,6 @@ def get_post_detail(post_id):
                 flex-wrap: wrap;
                 padding-left: 30px;
             }}
-
             .tag {{
                 background: rgba(74,108,247,0.12);
                 color: #4a6cf7;
@@ -195,7 +128,6 @@ def get_post_detail(post_id):
                 border-radius: 20px;
                 font-size: 12px;
             }}
-
             .content {{
                 font-size: 17px;
                 color: #f0f0f0;
@@ -204,7 +136,6 @@ def get_post_detail(post_id):
             .content p {{
                 margin-bottom: 20px;
             }}
-
             .like-area {{
                 margin-top: 30px;
                 padding-top: 20px;
@@ -237,8 +168,6 @@ def get_post_detail(post_id):
                 color: #ddd;
                 font-weight: 500;
             }}
-
-            /* ===== 页尾（简洁版） ===== */
             .footer {{
                 margin-top: 40px;
                 text-align: center;
@@ -246,64 +175,14 @@ def get_post_detail(post_id):
                 color: #888;
                 padding: 16px 0;
                 border-top: 1px solid rgba(0, 0, 0, 0.06);
-                flex-shrink: 0;
             }}
             .footer a {{
                 color: #4a6cf7;
                 text-decoration: none;
             }}
-
-            @media (max-width: 900px) {{
-                .navbar {{
-                    padding: 12px 20px;
-                    flex-wrap: wrap;
-                    gap: 8px;
-                }}
-                .navbar .nav-links {{
-                    gap: 16px;
-                    flex-wrap: wrap;
-                }}
-                body {{
-                    padding: 70px 16px 0 16px;
-                }}
-                .post-card {{
-                    padding: 30px 20px;
-                }}
-                .back-icon {{
-                    top: 16px;
-                    left: 16px;
-                    font-size: 20px;
-                }}
-                h1 {{
-                    font-size: 24px;
-                    padding-left: 20px;
-                }}
-                .meta {{
-                    padding-left: 20px;
-                }}
-                .content {{
-                    padding-left: 20px;
-                }}
-                .like-area {{
-                    padding-left: 20px;
-                }}
-            }}
         </style>
     </head>
     <body>
-
-        <!-- ===== 导航栏 ===== -->
-        <nav class="navbar">
-            <a class="site-title" href="/">来杯超级中可的blog</a>
-            <ul class="nav-links">
-                <li><a href="/">首页</a></li>
-                <li><a href="/" onclick="event.preventDefault(); window.location.href='/'; setTimeout(() => {{ document.getElementById('page-about') && (document.getElementById('page-about').style.display='block'); }}, 100);">关于我</a></li>
-                <li><a href="/" onclick="event.preventDefault(); window.location.href='/'; setTimeout(() => {{ document.getElementById('page-links') && (document.getElementById('page-links').style.display='block'); }}, 100);">友链</a></li>
-                <li><a href="/" onclick="event.preventDefault(); window.location.href='/'; setTimeout(() => {{ showAdmin && showAdmin(); }}, 100);">管理</a></li>
-            </ul>
-        </nav>
-
-        <!-- ===== 文章卡片 ===== -->
         <div class="post-card">
             <a class="back-icon" href="/" title="返回首页">
                 <i class="fas fa-arrow-left"></i>
@@ -312,7 +191,7 @@ def get_post_detail(post_id):
             <h1>{post['title']}</h1>
             <div class="meta">
                 <span><i class="far fa-clock" style="margin-right:4px;"></i> {post['date']}</span>
-                {''.join([f'<span class="tag"># {tag.strip()}</span>' for tag in post['tags'].split(',')])}
+                {tags_html}
             </div>
             <div class="content">
                 {content_html}
@@ -326,8 +205,6 @@ def get_post_detail(post_id):
                 </div>
             </div>
         </div>
-
-        <!-- ===== 页尾（简洁版） ===== -->
         <div class="footer">
             © 2026 · 使用 GitHub Pages 搭建 ·
             <a href="https://github.com/Super-Coke" target="_blank">Super-Coke 的主页</a>

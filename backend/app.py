@@ -1,41 +1,61 @@
 from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
+import os
 import sqlite3
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='/static')
 CORS(app, resources={r"/api/*": {"origins": ["https://super-coke.github.io", "*"]}})
 
+# ===== 数据库连接 =====
 def get_db_connection():
-    conn = sqlite3.connect('blog.db')
-    conn.row_factory = sqlite3.Row
-    return conn
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    if DATABASE_URL:
+        # 使用 PostgreSQL
+        conn = psycopg2.connect(DATABASE_URL)
+        return conn
+    else:
+        # 本地开发时使用 SQLite
+        conn = sqlite3.connect('blog.db')
+        conn.row_factory = sqlite3.Row
+        return conn
 
-# ===== 首页路由：返回前端 index.html =====
+# ===== 首页路由 =====
 @app.route('/')
 def index():
-    with open('../frontend/index.html', 'r', encoding='utf-8') as f:
-        return f.read()
+    try:
+        with open('frontend/index.html', 'r', encoding='utf-8') as f:
+            return f.read()
+    except FileNotFoundError:
+        with open('../frontend/index.html', 'r', encoding='utf-8') as f:
+            return f.read()
 
-# ===== 静态文件路由：让 Flask 能提供 frontend 文件夹里的图片 =====
+# ===== 静态文件路由 =====
 @app.route('/static/<path:filename>')
 def static_files(filename):
-    return send_from_directory('../frontend', filename)
+    try:
+        return send_from_directory('frontend', filename)
+    except FileNotFoundError:
+        return send_from_directory('../frontend', filename)
 
 # ===== API 1：获取所有文章列表 =====
 @app.route('/api/posts', methods=['GET'])
 def get_posts():
     conn = get_db_connection()
-    posts_db = conn.execute('SELECT * FROM posts ORDER BY id DESC').fetchall()
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM posts ORDER BY id DESC')
+    posts_db = cur.fetchall()
     conn.close()
 
     posts = []
     for row in posts_db:
         posts.append({
-            'id': row['id'],
-            'title': row['title'],
-            'date': row['date'],
-            'tags': row['tags'].split(',') if row['tags'] else [],
-            'summary': row['summary']
+            'id': row[0],
+            'title': row[1],
+            'date': row[2],
+            'tags': row[3].split(',') if row[3] else [],
+            'summary': row[4]
         })
     return jsonify(posts)
 
@@ -43,17 +63,26 @@ def get_posts():
 @app.route('/post/<int:post_id>')
 def get_post_detail(post_id):
     conn = get_db_connection()
-    post = conn.execute('SELECT * FROM posts WHERE id = ?', (post_id,)).fetchone()
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM posts WHERE id = %s', (post_id,))
+    row = cur.fetchone()
     conn.close()
 
-    if post is None:
+    if row is None:
         return '<h1>404 - 文章未找到</h1><p><a href="/">返回首页</a></p>', 404
 
+    # 转换为字典
+    post = {
+        'id': row[0],
+        'title': row[1],
+        'date': row[2],
+        'tags': row[3],
+        'summary': row[4],
+        'content': row[5] if len(row) > 5 else None
+    }
+
     # 安全处理 content
-    if post['content'] is not None:
-        content_html = post['content'].replace('\n', '<br>')
-    else:
-        content_html = '（暂无正文内容）'
+    content_html = post['content'].replace('\n', '<br>') if post['content'] else '（暂无正文内容）'
 
     # 安全处理 tags
     tags_list = post['tags'].split(',') if post['tags'] else []
@@ -306,7 +335,9 @@ def get_client_ip():
 @app.route('/api/posts/<int:post_id>/likes', methods=['GET'])
 def get_post_likes(post_id):
     conn = get_db_connection()
-    count = conn.execute('SELECT COUNT(*) FROM likes WHERE post_id = ?', (post_id,)).fetchone()[0]
+    cur = conn.cursor()
+    cur.execute('SELECT COUNT(*) FROM likes WHERE post_id = %s', (post_id,))
+    count = cur.fetchone()[0]
     conn.close()
     return jsonify({'post_id': post_id, 'likes': count})
 
@@ -314,7 +345,9 @@ def get_post_likes(post_id):
 def get_like_status(post_id):
     ip = get_client_ip()
     conn = get_db_connection()
-    exists = conn.execute('SELECT 1 FROM likes WHERE post_id = ? AND ip = ?', (post_id, ip)).fetchone()
+    cur = conn.cursor()
+    cur.execute('SELECT 1 FROM likes WHERE post_id = %s AND ip = %s', (post_id, ip))
+    exists = cur.fetchone()
     conn.close()
     return jsonify({'liked': exists is not None})
 
@@ -322,16 +355,18 @@ def get_like_status(post_id):
 def toggle_like(post_id):
     ip = get_client_ip()
     conn = get_db_connection()
+    cur = conn.cursor()
     
-    existing = conn.execute('SELECT 1 FROM likes WHERE post_id = ? AND ip = ?', (post_id, ip)).fetchone()
+    cur.execute('SELECT 1 FROM likes WHERE post_id = %s AND ip = %s', (post_id, ip))
+    existing = cur.fetchone()
     
     if existing:
-        conn.execute('DELETE FROM likes WHERE post_id = ? AND ip = ?', (post_id, ip))
+        cur.execute('DELETE FROM likes WHERE post_id = %s AND ip = %s', (post_id, ip))
         conn.commit()
         conn.close()
         return jsonify({'liked': False, 'message': '已取消点赞'})
     else:
-        conn.execute('INSERT INTO likes (post_id, ip) VALUES (?, ?)', (post_id, ip))
+        cur.execute('INSERT INTO likes (post_id, ip) VALUES (%s, %s)', (post_id, ip))
         conn.commit()
         conn.close()
         return jsonify({'liked': True, 'message': '点赞成功'})
@@ -369,8 +404,9 @@ def create_post():
         return jsonify({'success': False, 'message': '标题和日期不能为空'}), 400
     
     conn = get_db_connection()
-    conn.execute(
-        'INSERT INTO posts (title, date, tags, summary, content) VALUES (?, ?, ?, ?, ?)',
+    cur = conn.cursor()
+    cur.execute(
+        'INSERT INTO posts (title, date, tags, summary, content) VALUES (%s, %s, %s, %s, %s)',
         (title, date, tags, summary, content)
     )
     conn.commit()
@@ -387,12 +423,14 @@ def delete_post(post_id):
         return jsonify({'success': False, 'message': '密码错误'}), 401
     
     conn = get_db_connection()
-    post = conn.execute('SELECT * FROM posts WHERE id = ?', (post_id,)).fetchone()
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM posts WHERE id = %s', (post_id,))
+    post = cur.fetchone()
     if post is None:
         conn.close()
         return jsonify({'success': False, 'message': '文章不存在'}), 404
     
-    conn.execute('DELETE FROM posts WHERE id = ?', (post_id,))
+    cur.execute('DELETE FROM posts WHERE id = %s', (post_id,))
     conn.commit()
     conn.close()
     

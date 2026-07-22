@@ -97,54 +97,6 @@ def get_post_detail(post_id):
         <title>{post['title']} · 我的博客</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
         <style>
-            /* ===== 导航栏样式 ===== */
-            .navbar {{
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                background: rgba(255, 255, 255, 0.25);
-                backdrop-filter: blur(6px);
-                -webkit-backdrop-filter: blur(6px);
-                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-                padding: 16px 180px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                z-index: 1000;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            }}
-            .navbar .site-title {{
-                font-size: 20px;
-                font-weight: 700;
-                color: #1a1a2e;
-                text-decoration: none;
-                cursor: pointer;
-                letter-spacing: 0.5px;
-            }}
-            .navbar .site-title:hover {{
-                color: #4a6cf7;
-            }}
-            .navbar .nav-links {{
-                display: flex;
-                gap: 32px;
-                list-style: none;
-                margin: 0;
-                padding: 0;
-            }}
-            .navbar .nav-links li a {{
-                text-decoration: none;
-                color: #1a1a2e;
-                font-weight: 500;
-                font-size: 16px;
-                cursor: pointer;
-                transition: color 0.2s;
-                padding: 4px 0;
-            }}
-            .navbar .nav-links li a:hover {{
-                color: #4a6cf7;
-            }}
-
             body {{
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                 max-width: 800px;
@@ -260,17 +212,6 @@ def get_post_detail(post_id):
         </style>
     </head>
     <body>
-        <!-- ===== 导航栏 ===== -->
-        <nav class="navbar">
-            <a class="site-title" href="https://super-coke.github.io/myblog/">来杯超级中可的blog</a>
-            <ul class="nav-links">
-                <li><a href="https://super-coke.github.io/myblog/"><i class="fas fa-home"></i> 首页</a></li>
-                <li><a href="https://super-coke.github.io/myblog/#" onclick="event.preventDefault(); window.location.href='https://super-coke.github.io/myblog/'; setTimeout(() => {{ document.getElementById('page-about') && (document.getElementById('page-about').style.display='block'); }}, 100);"><i class="fas fa-user"></i> 关于我</a></li>
-                <li><a href="https://super-coke.github.io/myblog/#" onclick="event.preventDefault(); window.location.href='https://super-coke.github.io/myblog/'; setTimeout(() => {{ document.getElementById('page-links') && (document.getElementById('page-links').style.display='block'); }}, 100);"><i class="fas fa-link"></i> 友链</a></li>
-                <li><a href="https://super-coke.github.io/myblog/#" onclick="event.preventDefault(); window.location.href='https://super-coke.github.io/myblog/'; setTimeout(() => {{ showAdmin && showAdmin(); }}, 100);"><i class="fas fa-cog"></i> 管理</a></li>
-            </ul>
-        </nav>
-
         <div class="post-card">
             <a class="back-icon" href="https://super-coke.github.io/myblog/" title="返回首页">
                 <i class="fas fa-arrow-left"></i>

@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import os
 import psycopg2
@@ -16,6 +16,13 @@ def get_db_connection():
 def index():
     with open('index.html', 'r', encoding='utf-8') as f:
         return f.read()
+
+# ===== 静态文件路由：提供图片等文件 =====
+@app.route('/<path:filename>')
+def serve_static(filename):
+    if filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.ico')):
+        return send_from_directory('.', filename)
+    return 'Not Found', 404
 
 # ===== API 1：获取所有文章列表 =====
 @app.route('/api/posts', methods=['GET'])

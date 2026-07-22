@@ -429,7 +429,7 @@ def delete_post(post_id):
     if post is None:
         conn.close()
         return jsonify({'success': False, 'message': '文章不存在'}), 404
-    
+     
     cur.execute('DELETE FROM posts WHERE id = %s', (post_id,))
     conn.commit()
     conn.close()

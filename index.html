@@ -92,13 +92,12 @@
         .main-wrapper {
             max-width: 1300px;
             margin: 0 auto;
-            margin-bottom: 120px; /* 底部滚动缓冲核心 */
+            margin-bottom: 120px;
             display: flex;
             gap: 40px;
             align-items: flex-start;
             position: relative;
             width: 100%;
-            /* ❗删除 flex:1，这是之前失效根源 */
         }
 
         .sidebar {
@@ -581,7 +580,7 @@
         const container = document.getElementById('page-home');
         container.innerHTML = '<div class="loading-text">⏳ 文章加载中...</div>';
 
-        fetch('/api/posts')
+        fetch('https://myblog-production-1e05.up.railway.app/api/posts')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('网络响应异常: ' + response.status);
@@ -613,7 +612,7 @@
                     const summary = post.summary || post.content || '';
 
                     html += `
-                        <div class="post-item" onclick="location.href='/post/${post.id}'" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.2); margin-bottom: 20px;" 
+                        <div class="post-item" onclick="location.href='https://myblog-production-1e05.up.railway.app/post/${post.id}'" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.2); margin-bottom: 20px;" 
                              onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 20px rgba(0,0,0,0.08)';" 
                              onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
                             <h1 class="post-title">${post.title || '无标题'}</h1>
@@ -662,7 +661,7 @@
             return;
         }
 
-        fetch('/api/admin/verify', {
+        fetch('https://myblog-production-1e05.up.railway.app/api/admin/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ password: password })
@@ -687,7 +686,7 @@
         const container = document.getElementById('admin-post-list');
         container.innerHTML = '<div class="loading-text">⏳ 加载中...</div>';
 
-        fetch('/api/posts')
+        fetch('https://myblog-production-1e05.up.railway.app/api/posts')
             .then(response => response.json())
             .then(data => {
                 let posts = Array.isArray(data) ? data : (data.posts || []);
@@ -732,7 +731,7 @@
         messageEl.textContent = '⏳ 发布中...';
         messageEl.style.color = '#4a6cf7';
 
-        fetch('/api/admin/posts', {
+        fetch('https://myblog-production-1e05.up.railway.app/api/admin/posts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -773,7 +772,7 @@
             return;
         }
 
-        fetch(`/api/admin/posts/${postId}`, {
+        fetch(`https://myblog-production-1e05.up.railway.app/api/admin/posts/${postId}`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ password: adminPassword })

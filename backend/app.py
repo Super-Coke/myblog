@@ -184,7 +184,7 @@ def get_post_detail(post_id):
     </head>
     <body>
         <div class="post-card">
-            <a class="back-icon" href="/" title="返回首页">
+            <a class="back-icon" href="https://super-coke.github.io/myblog/" title="返回首页">
                 <i class="fas fa-arrow-left"></i>
             </a>
 
